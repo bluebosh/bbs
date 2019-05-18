@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"context"
 	"time"
 
 	"code.cloudfoundry.org/auctioneer"
@@ -60,7 +61,7 @@ func (h *TaskController) TaskByGuid(logger lager.Logger, taskGuid string) (*mode
 	return h.db.TaskByGuid(logger, taskGuid)
 }
 
-func (h *TaskController) DesireTask(logger lager.Logger, taskDefinition *models.TaskDefinition, taskGuid, domain string) error {
+func (h *TaskController) DesireTask(ctx context.Context, logger lager.Logger, taskDefinition *models.TaskDefinition, taskGuid, domain string) error {
 	var err error
 	var task *models.Task
 	logger = logger.Session("desire-task")
@@ -75,7 +76,7 @@ func (h *TaskController) DesireTask(logger lager.Logger, taskDefinition *models.
 
 	logger.Debug("start-task-auction-request")
 	taskStartRequest := auctioneer.NewTaskStartRequestFromModel(taskGuid, domain, taskDefinition)
-	err = h.auctioneerClient.RequestTaskAuctions(logger, []*auctioneer.TaskStartRequest{&taskStartRequest})
+	err = h.auctioneerClient.RequestTaskAuctions(ctx, logger, []*auctioneer.TaskStartRequest{&taskStartRequest})
 	if err != nil {
 		logger.Error("failed-requesting-task-auction", err)
 		// The creation succeeded, the auction request error can be dropped
@@ -273,7 +274,7 @@ func (h *TaskController) ConvergeTasks(
 
 	if len(tasksToAuction) > 0 {
 		logger.Debug("requesting-task-auctions", lager.Data{"num_tasks_to_auction": len(tasksToAuction)})
-		err = h.auctioneerClient.RequestTaskAuctions(logger, tasksToAuction)
+		err = h.auctioneerClient.RequestTaskAuctions(nil, logger, tasksToAuction)
 		if err != nil {
 			taskGuids := make([]string, len(tasksToAuction))
 			for i, task := range tasksToAuction {

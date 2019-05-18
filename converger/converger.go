@@ -1,12 +1,13 @@
 package converger
 
 import (
+	"context"
 	"os"
 	"sync"
 	"time"
 
 	"code.cloudfoundry.org/lager"
-	"github.com/nu7hatch/gouuid"
+	uuid "github.com/nu7hatch/gouuid"
 
 	"code.cloudfoundry.org/bbs/models"
 	"code.cloudfoundry.org/bbs/serviceclient"
@@ -15,7 +16,7 @@ import (
 
 //go:generate counterfeiter -o fake_controllers/fake_lrp_convergence_controller.go . LrpConvergenceController
 type LrpConvergenceController interface {
-	ConvergeLRPs(logger lager.Logger) error
+	ConvergeLRPs(ctx context.Context, logger lager.Logger) error
 }
 
 //go:generate counterfeiter -o fake_controllers/fake_task_controller.go . TaskController
@@ -144,7 +145,7 @@ func (c *Converger) converge(convergeChan chan struct{}) {
 		logger.Info("converge-lrps-started")
 		defer logger.Info("converge-lrps-done")
 
-		err := c.lrpConvergenceController.ConvergeLRPs(c.logger)
+		err := c.lrpConvergenceController.ConvergeLRPs(nil, c.logger)
 		if err != nil {
 			logger.Error("failed-to-converge-lrps", err)
 		}

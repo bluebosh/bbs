@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"net/http"
 
 	"code.cloudfoundry.org/auctioneer"
@@ -134,7 +135,7 @@ func (h *DesiredLRPHandler) DesireDesiredLRP(logger lager.Logger, w http.Respons
 	go h.desiredHub.Emit(models.NewDesiredLRPCreatedEvent(desiredLRP))
 
 	schedulingInfo := request.DesiredLrp.DesiredLRPSchedulingInfo()
-	h.startInstanceRange(logger, 0, schedulingInfo.Instances, &schedulingInfo)
+	h.startInstanceRange(req.Context(), logger, 0, schedulingInfo.Instances, &schedulingInfo)
 }
 
 func (h *DesiredLRPHandler) UpdateDesiredLRP(logger lager.Logger, w http.ResponseWriter, req *http.Request) {
@@ -179,7 +180,7 @@ func (h *DesiredLRPHandler) UpdateDesiredLRP(logger lager.Logger, w http.Respons
 		if requestedInstances > 0 {
 			logger.Debug("increasing-the-instances")
 			schedulingInfo := desiredLRP.DesiredLRPSchedulingInfo()
-			h.startInstanceRange(logger, previousInstanceCount, *request.Update.Instances, &schedulingInfo)
+			h.startInstanceRange(req.Context(), logger, previousInstanceCount, *request.Update.Instances, &schedulingInfo)
 		}
 
 		if requestedInstances < 0 {
@@ -224,7 +225,7 @@ func (h *DesiredLRPHandler) RemoveDesiredLRP(logger lager.Logger, w http.Respons
 	h.stopInstancesFrom(logger, request.ProcessGuid, 0)
 }
 
-func (h *DesiredLRPHandler) startInstanceRange(logger lager.Logger, lower, upper int32, schedulingInfo *models.DesiredLRPSchedulingInfo) {
+func (h *DesiredLRPHandler) startInstanceRange(ctx context.Context, logger lager.Logger, lower, upper int32, schedulingInfo *models.DesiredLRPSchedulingInfo) {
 	logger = logger.Session("start-instance-range", lager.Data{"lower": lower, "upper": upper})
 	logger.Info("starting")
 	defer logger.Info("complete")
@@ -239,7 +240,7 @@ func (h *DesiredLRPHandler) startInstanceRange(logger lager.Logger, lower, upper
 	start := auctioneer.NewLRPStartRequestFromSchedulingInfo(schedulingInfo, createdIndices...)
 
 	logger.Info("start-lrp-auction-request", lager.Data{"app_guid": schedulingInfo.ProcessGuid, "indices": createdIndices})
-	err := h.auctioneerClient.RequestLRPAuctions(logger, []*auctioneer.LRPStartRequest{&start})
+	err := h.auctioneerClient.RequestLRPAuctions(ctx, logger, []*auctioneer.LRPStartRequest{&start})
 	logger.Info("finished-lrp-auction-request", lager.Data{"app_guid": schedulingInfo.ProcessGuid, "indices": createdIndices})
 	if err != nil {
 		logger.Error("failed-to-request-auction", err)

@@ -1,6 +1,8 @@
 package controllers
 
 import (
+	"context"
+
 	"code.cloudfoundry.org/auctioneer"
 	"code.cloudfoundry.org/bbs/db"
 	"code.cloudfoundry.org/bbs/events"
@@ -79,7 +81,7 @@ func (h *ActualLRPLifecycleController) StartActualLRP(logger lager.Logger, actua
 	return nil
 }
 
-func (h *ActualLRPLifecycleController) CrashActualLRP(logger lager.Logger, actualLRPKey *models.ActualLRPKey, actualLRPInstanceKey *models.ActualLRPInstanceKey, errorMessage string) error {
+func (h *ActualLRPLifecycleController) CrashActualLRP(ctx context.Context, logger lager.Logger, actualLRPKey *models.ActualLRPKey, actualLRPInstanceKey *models.ActualLRPInstanceKey, errorMessage string) error {
 	before, after, shouldRestart, err := h.db.CrashActualLRP(logger, actualLRPKey, actualLRPInstanceKey, errorMessage)
 	if err != nil {
 		return err
@@ -109,7 +111,7 @@ func (h *ActualLRPLifecycleController) CrashActualLRP(logger lager.Logger, actua
 	schedInfo := desiredLRP.DesiredLRPSchedulingInfo()
 	startRequest := auctioneer.NewLRPStartRequestFromSchedulingInfo(&schedInfo, int(actualLRPKey.Index))
 	logger.Info("start-lrp-auction-request", lager.Data{"app_guid": schedInfo.ProcessGuid, "index": int(actualLRPKey.Index)})
-	err = h.auctioneerClient.RequestLRPAuctions(logger, []*auctioneer.LRPStartRequest{&startRequest})
+	err = h.auctioneerClient.RequestLRPAuctions(ctx, logger, []*auctioneer.LRPStartRequest{&startRequest})
 	logger.Info("finished-lrp-auction-request", lager.Data{"app_guid": schedInfo.ProcessGuid, "index": int(actualLRPKey.Index)})
 	if err != nil {
 		logger.Error("failed-requesting-auction", err)

@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"net/http"
 
 	"code.cloudfoundry.org/auctioneer"
@@ -129,7 +130,7 @@ func (h *EvacuationHandler) EvacuateClaimedActualLRP(logger lager.Logger, w http
 		}
 	}
 
-	err = h.unclaimAndRequestAuction(logger, request.ActualLrpKey)
+	err = h.unclaimAndRequestAuction(req.Context(), logger, request.ActualLrpKey)
 	bbsErr := models.ConvertError(err)
 	if bbsErr != nil && bbsErr.Type != models.Error_ResourceNotFound {
 		response.Error = bbsErr
@@ -285,7 +286,7 @@ func (h *EvacuationHandler) EvacuateRunningActualLRP(logger lager.Logger, w http
 
 		go h.actualHub.Emit(models.NewActualLRPCreatedEvent(group))
 
-		err = h.unclaimAndRequestAuction(logger, request.ActualLrpKey)
+		err = h.unclaimAndRequestAuction(req.Context(), logger, request.ActualLrpKey)
 		if err != nil {
 			response.Error = models.ConvertError(err)
 			return
@@ -348,7 +349,7 @@ func (h *EvacuationHandler) EvacuateStoppedActualLRP(logger lager.Logger, w http
 	}
 }
 
-func (h *EvacuationHandler) unclaimAndRequestAuction(logger lager.Logger, lrpKey *models.ActualLRPKey) error {
+func (h *EvacuationHandler) unclaimAndRequestAuction(ctx context.Context, logger lager.Logger, lrpKey *models.ActualLRPKey) error {
 	before, after, err := h.actualLRPDB.UnclaimActualLRP(logger, lrpKey)
 	if err != nil {
 		return err
@@ -364,7 +365,7 @@ func (h *EvacuationHandler) unclaimAndRequestAuction(logger lager.Logger, lrpKey
 
 	schedInfo := desiredLRP.DesiredLRPSchedulingInfo()
 	startRequest := auctioneer.NewLRPStartRequestFromSchedulingInfo(&schedInfo, int(lrpKey.Index))
-	err = h.auctioneerClient.RequestLRPAuctions(logger, []*auctioneer.LRPStartRequest{&startRequest})
+	err = h.auctioneerClient.RequestLRPAuctions(ctx, logger, []*auctioneer.LRPStartRequest{&startRequest})
 	if err != nil {
 		logger.Error("failed-requesting-auction", err)
 	}

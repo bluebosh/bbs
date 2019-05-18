@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"net/http"
 	"time"
 
@@ -13,7 +14,7 @@ import (
 type TaskController interface {
 	Tasks(logger lager.Logger, domain, cellId string) ([]*models.Task, error)
 	TaskByGuid(logger lager.Logger, taskGuid string) (*models.Task, error)
-	DesireTask(logger lager.Logger, taskDefinition *models.TaskDefinition, taskGuid, domain string) error
+	DesireTask(ctx context.Context, logger lager.Logger, taskDefinition *models.TaskDefinition, taskGuid, domain string) error
 	StartTask(logger lager.Logger, taskGuid, cellId string) (shouldStart bool, err error)
 	CancelTask(logger lager.Logger, taskGuid string) error
 	FailTask(logger lager.Logger, taskGuid, failureReason string) error
@@ -98,7 +99,7 @@ func (h *TaskHandler) DesireTask(logger lager.Logger, w http.ResponseWriter, req
 		return
 	}
 
-	err = h.controller.DesireTask(logger, request.TaskDefinition, request.TaskGuid, request.Domain)
+	err = h.controller.DesireTask(req.Context(), logger, request.TaskDefinition, request.TaskGuid, request.Domain)
 	response.Error = models.ConvertError(err)
 }
 

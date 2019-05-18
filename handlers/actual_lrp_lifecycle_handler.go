@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"net/http"
 
 	"code.cloudfoundry.org/auctioneer"
@@ -14,7 +15,7 @@ import (
 type ActualLRPLifecycleController interface {
 	ClaimActualLRP(logger lager.Logger, processGuid string, index int32, actualLRPInstanceKey *models.ActualLRPInstanceKey) error
 	StartActualLRP(logger lager.Logger, actualLRPKey *models.ActualLRPKey, actualLRPInstanceKey *models.ActualLRPInstanceKey, actualLRPNetInfo *models.ActualLRPNetInfo) error
-	CrashActualLRP(logger lager.Logger, actualLRPKey *models.ActualLRPKey, actualLRPInstanceKey *models.ActualLRPInstanceKey, errorMessage string) error
+	CrashActualLRP(ctx context.Context, logger lager.Logger, actualLRPKey *models.ActualLRPKey, actualLRPInstanceKey *models.ActualLRPInstanceKey, errorMessage string) error
 	FailActualLRP(logger lager.Logger, key *models.ActualLRPKey, errorMessage string) error
 	RemoveActualLRP(logger lager.Logger, processGuid string, index int32, instanceKey *models.ActualLRPInstanceKey) error
 	RetireActualLRP(logger lager.Logger, key *models.ActualLRPKey) error
@@ -96,7 +97,7 @@ func (h *ActualLRPLifecycleHandler) CrashActualLRP(logger lager.Logger, w http.R
 	actualLRPKey := request.ActualLrpKey
 	actualLRPInstanceKey := request.ActualLrpInstanceKey
 
-	err = h.controller.CrashActualLRP(logger, actualLRPKey, actualLRPInstanceKey, request.ErrorMessage)
+	err = h.controller.CrashActualLRP(req.Context(), logger, actualLRPKey, actualLRPInstanceKey, request.ErrorMessage)
 	response.Error = models.ConvertError(err)
 }
 

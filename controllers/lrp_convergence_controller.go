@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"context"
 	"sync"
 
 	"code.cloudfoundry.org/auctioneer"
@@ -47,7 +48,7 @@ func NewLRPConvergenceController(
 	}
 }
 
-func (h *LRPConvergenceController) ConvergeLRPs(logger lager.Logger) error {
+func (h *LRPConvergenceController) ConvergeLRPs(ctx context.Context, logger lager.Logger) error {
 	logger = h.logger.Session("converge-lrps")
 	var err error
 
@@ -131,7 +132,7 @@ func (h *LRPConvergenceController) ConvergeLRPs(logger lager.Logger) error {
 	startLogger := logger.WithData(lager.Data{"start_requests_count": len(startRequests)})
 	if len(startRequests) > 0 {
 		startLogger.Debug("requesting-start-auctions")
-		err = h.auctioneerClient.RequestLRPAuctions(logger, startRequests)
+		err = h.auctioneerClient.RequestLRPAuctions(ctx, logger, startRequests)
 		if err != nil {
 			startLogger.Error("failed-to-request-starts", err, lager.Data{"lrp_start_auctions": startRequests})
 		}
