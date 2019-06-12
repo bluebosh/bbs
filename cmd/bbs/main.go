@@ -91,6 +91,7 @@ func main() {
 		zipkinSharedRPCSpan,
 	)
 	defer closer.Close()
+	opentracing.SetGlobalTracer(tracer)
 
 	flag.Parse()
 
