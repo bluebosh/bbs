@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"golang.org/x/net/context"
 	"sync"
 
 	"code.cloudfoundry.org/auctioneer"
@@ -131,7 +132,7 @@ func (h *LRPConvergenceController) ConvergeLRPs(logger lager.Logger) error {
 	startLogger := logger.WithData(lager.Data{"start_requests_count": len(startRequests)})
 	if len(startRequests) > 0 {
 		startLogger.Debug("requesting-start-auctions")
-		err = h.auctioneerClient.RequestLRPAuctions(logger, startRequests)
+		err = h.auctioneerClient.RequestLRPAuctions(context.TODO(), logger, startRequests)
 		if err != nil {
 			startLogger.Error("failed-to-request-starts", err, lager.Data{"lrp_start_auctions": startRequests})
 		}
