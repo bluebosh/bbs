@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"github.com/opentracing/opentracing-go"
 	"golang.org/x/net/context"
 	"net/http"
 
@@ -13,6 +12,8 @@ import (
 	"code.cloudfoundry.org/lager"
 	"code.cloudfoundry.org/rep"
 	"code.cloudfoundry.org/workpool"
+
+	opentracing "github.com/opentracing/opentracing-go"
 )
 
 type DesiredLRPHandler struct {
